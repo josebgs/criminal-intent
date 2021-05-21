@@ -46,7 +46,7 @@ class CrimeListFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         crimeListViewModel.crimeListLiveData.observe(
             viewLifecycleOwner,
-            Observer { crimes ->
+            { crimes ->
                 crimes?.let{
                     Log.i(TAG, "Got crimes ${crimes.size}")
                     updateUI(crimes)
