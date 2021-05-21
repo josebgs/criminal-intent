@@ -13,7 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.text.format.DateFormat
-import androidx.lifecycle.Observer
+
 
 private const val TAG = "CrimeListFragment"
 class CrimeListFragment: Fragment() {
