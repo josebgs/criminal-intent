@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.text.format.DateFormat
+import androidx.navigation.findNavController
 import java.util.*
 
 
@@ -25,11 +26,6 @@ class CrimeListFragment: Fragment() {
      * Required interface for hosting activities
      */
 
-    interface Callbacks{
-        fun onCrimeSelected(crimeId: UUID)
-    }
-
-    private var callbacks: Callbacks? = null
 
     private lateinit var crimeRecyclerView: RecyclerView
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
@@ -38,10 +34,6 @@ class CrimeListFragment: Fragment() {
         ViewModelProvider(this@CrimeListFragment).get(CrimeListViewModel::class.java)
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        callbacks = context as Callbacks?
-    }
 
 
     override fun onCreateView(
@@ -72,10 +64,6 @@ class CrimeListFragment: Fragment() {
             })
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        callbacks = null
-    }
 
     private fun updateUI(crimes : List<Crime>){
         adapter = CrimeAdapter(crimes)
@@ -113,7 +101,8 @@ class CrimeListFragment: Fragment() {
         }
 
         override fun onClick(v: View){
-            callbacks?.onCrimeSelected(crime.id)
+            val directions = CrimeListFragmentDirections.actionCrimeListFragmentToCrimeFragment(crimeId=crime.id.toString())
+            v.findNavController().navigate(directions)
         }
     }
 

@@ -13,6 +13,7 @@ import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.navArgs
 import java.util.UUID
 
 private const val TAG = "CrimeFragment"
@@ -26,10 +27,12 @@ class CrimeFragment: Fragment() {
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
 
+    private val safeArgs: CrimeFragmentArgs by navArgs()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
-        val crimeId: UUID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
+        val crimeId: UUID = UUID.fromString(safeArgs.crimeId)
         crimeDetailViewModel.loadCrime(crimeId)
     }
 
