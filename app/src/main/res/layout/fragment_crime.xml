@@ -28,7 +28,14 @@
         android:id="@+id/crime_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:text="Mon May 17 1:09 EST 2021"/>
+        tools:text="May 17 2021"/>
+
+    <Button
+        android:id="@+id/crime_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        tools:text="1:09"/>
 
     <CheckBox
         android:id="@+id/crime_solved"
