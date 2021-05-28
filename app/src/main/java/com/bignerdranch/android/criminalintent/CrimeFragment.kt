@@ -133,6 +133,7 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         super.onStop()
         crimeDetailViewModel.saveCrime(crime)
     }
+
     companion object{
         fun newInstance(crimeId: UUID): CrimeFragment{
             val args = Bundle().apply {
