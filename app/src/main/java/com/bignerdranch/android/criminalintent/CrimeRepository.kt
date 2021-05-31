@@ -18,7 +18,6 @@ class CrimeRepository private constructor(context: Context) {
         context.applicationContext,
         CrimeDatabase::class.java,
         DATABASE_NAME)
-        .createFromAsset(DATABASE_DIR)
         .build()
 
     private val crimeDao = database.crimeDao()

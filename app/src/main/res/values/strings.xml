@@ -10,4 +10,6 @@
     <string name="handcuffs_content_desc">An image of handcuffs.</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="there_are_no_crimes">There are no crimes</string>
+    <string name="create">Create</string>
 </resources>

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.text.format.DateFormat
 import android.view.*
+import android.widget.Button
 import java.util.*
 
 
@@ -36,6 +37,10 @@ class CrimeListFragment: Fragment() {
         ViewModelProvider(this@CrimeListFragment).get(CrimeListViewModel::class.java)
     }
 
+
+    private lateinit var createButton: Button
+    private lateinit var createTextView: TextView
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         callbacks = context as Callbacks?
@@ -44,6 +49,7 @@ class CrimeListFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+
     }
 
     override fun onCreateView(
@@ -57,6 +63,10 @@ class CrimeListFragment: Fragment() {
             view.findViewById(R.id.crime_recycler_view) as RecyclerView
         crimeRecyclerView.layoutManager = LinearLayoutManager(context)
         crimeRecyclerView.adapter = adapter
+
+        createButton = view.findViewById(R.id.create_button)
+        createTextView = view.findViewById(R.id.empty_list_text_view)
+
 
         return view
 
@@ -74,6 +84,14 @@ class CrimeListFragment: Fragment() {
             })
     }
 
+    override fun onStart() {
+        super.onStart()
+        createButton.setOnClickListener {
+            val newCrime = Crime()
+            crimeListViewModel.addCrime(newCrime)
+            callbacks?.onCrimeSelected(newCrime.id)
+        }
+    }
     override fun onDetach() {
         super.onDetach()
         callbacks = null
@@ -99,6 +117,17 @@ class CrimeListFragment: Fragment() {
     private fun updateUI(crimes : List<Crime>){
         adapter = CrimeAdapter(crimes)
         crimeRecyclerView.adapter = adapter
+
+        crimeListViewModel.createVisibility = if(crimes.isEmpty()){
+            createButton.isEnabled = true
+            View.VISIBLE
+        }   else{
+            createButton.isEnabled = false
+            View.GONE
+        }
+
+        createButton.visibility = crimeListViewModel.createVisibility
+        createTextView.visibility = crimeListViewModel.createVisibility
     }
 
     companion object{
@@ -113,12 +142,11 @@ class CrimeListFragment: Fragment() {
         private val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
         private val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
         private val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
-
         init{
             itemView.setOnClickListener(this)
         }
 
-        fun bind(crime: Crime){
+        fun bind(crime: Crime, size: Int){
             this.crime = crime
 
             titleTextView.text = this.crime.title
@@ -148,7 +176,7 @@ class CrimeListFragment: Fragment() {
 
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
-            holder.bind(crime)
+            holder.bind(crime, crimes.size)
         }
     }
 }
