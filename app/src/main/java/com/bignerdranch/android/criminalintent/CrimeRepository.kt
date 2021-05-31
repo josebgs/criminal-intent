@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.room.Room
 import database.CrimeDatabase
+import database.migration_1_2
 import java.lang.IllegalStateException
 import java.util.*
 import java.util.concurrent.Executor
@@ -18,6 +19,8 @@ class CrimeRepository private constructor(context: Context) {
         context.applicationContext,
         CrimeDatabase::class.java,
         DATABASE_NAME)
+        .addMigrations(migration_1_2)
+        .createFromAsset(DATABASE_DIR)
         .build()
 
     private val crimeDao = database.crimeDao()

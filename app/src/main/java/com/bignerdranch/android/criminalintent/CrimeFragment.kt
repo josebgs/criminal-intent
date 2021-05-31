@@ -1,5 +1,6 @@
 package com.bignerdranch.android.criminalintent
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -21,6 +22,8 @@ private const val TAG = "CrimeFragment"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
+private const val DATE_FORMAT = "EEE, MMM, dd"
+private const val REQUEST_CONTACT = 1
 
 class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var crime: Crime
@@ -28,6 +31,8 @@ class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var dateButton: Button
     private lateinit var solvedCheckBox: CheckBox
     private lateinit var timeButton: Button
+    private lateinit var reportButton: Button
+    private lateinit var suspectButton: Button
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy{
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
@@ -50,7 +55,8 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         dateButton = view.findViewById(R.id.crime_date) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
         timeButton = view.findViewById(R.id.crime_time) as Button
-
+        reportButton = view.findViewById(R.id.crime_report) as Button
+        suspectButton = view.findViewById(R.id.crime_suspect) as Button
         return view
     }
 
@@ -82,6 +88,24 @@ class CrimeFragment: Fragment(), FragmentResultListener {
             isChecked = crime.isSolved
             jumpDrawablesToCurrentState()
         }
+
+    }
+
+    private fun getCrimeReport():String{
+        val solvedString =  if (crime.isSolved){
+            getString(R.string.crime_report_solved)
+        } else{
+            getString(R.string.crime_report_unsolved)
+        }
+        val dateString = DateFormat.format(DATE_FORMAT, crime.date).toString()
+
+        var suspect = if(crime.suspect.isBlank()){
+            getString(R.string.crime_report_no_suspect)
+        } else{
+            getString(R.string.crime_report_suspect, crime.suspect)
+        }
+
+        return getString(R.string.crime_report, crime.title, dateString, solvedString, suspect)
 
     }
 
@@ -126,6 +150,20 @@ class CrimeFragment: Fragment(), FragmentResultListener {
             TimePickerFragment
                 .newInstance(crime.date, REQUEST_TIME)
                 .show(childFragmentManager, REQUEST_TIME)
+        }
+
+        reportButton.setOnClickListener {
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, getCrimeReport())
+                putExtra(
+                    Intent.EXTRA_SUBJECT,
+                    getString(R.string.crime_report_subject))}
+                .also{  intent ->
+                    val chooserIntent = Intent.createChooser(intent,
+                        getString(R.string.send_report))
+                    startActivity(chooserIntent)
+                }
         }
     }
 
