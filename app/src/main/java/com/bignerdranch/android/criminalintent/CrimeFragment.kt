@@ -42,6 +42,7 @@ class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var timeButton: Button
     private lateinit var reportButton: Button
     private lateinit var suspectButton: Button
+    private lateinit var callButton: Button
     private lateinit var pickContactContract: ActivityResultContract<Uri, Uri?>
     private lateinit var pickContactCallback: ActivityResultCallback<Uri?>
     private lateinit var pickContactLauncher: ActivityResultLauncher<Uri>
