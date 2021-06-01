@@ -146,7 +146,7 @@ class CrimeListFragment: Fragment() {
             itemView.setOnClickListener(this)
         }
 
-        fun bind(crime: Crime, size: Int){
+        fun bind(crime: Crime){
             this.crime = crime
 
             titleTextView.text = this.crime.title
@@ -176,7 +176,7 @@ class CrimeListFragment: Fragment() {
 
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
-            holder.bind(crime, crimes.size)
+            holder.bind(crime)
         }
     }
 }

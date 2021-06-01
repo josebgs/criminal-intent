@@ -1,7 +1,13 @@
 package com.bignerdranch.android.criminalintent
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
+import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateFormat
@@ -12,6 +18,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentResultListener
 import androidx.lifecycle.ViewModelProvider
@@ -19,6 +28,7 @@ import androidx.lifecycle.Observer
 import java.util.*
 
 private const val TAG = "CrimeFragment"
+private const val LOG_TAG = "LOG_CrimeFragment"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
@@ -33,6 +43,10 @@ class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var timeButton: Button
     private lateinit var reportButton: Button
     private lateinit var suspectButton: Button
+    private lateinit var pickContactContract: ActivityResultContract<Uri, Uri?>
+    private lateinit var pickContactCallback: ActivityResultCallback<Uri?>
+    private lateinit var pickContactLauncher: ActivityResultLauncher<Uri>
+
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy{
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
@@ -42,6 +56,47 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         crime = Crime()
         val crimeId: UUID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
         crimeDetailViewModel.loadCrime(crimeId)
+
+        pickContactContract = object : ActivityResultContract<Uri, Uri?>(){
+            override fun createIntent(context: Context, input: Uri?): Intent {
+                Log.d(TAG, "createIntent() called")
+                return Intent(Intent.ACTION_PICK, input)
+            }
+
+            override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
+                Log.d(TAG, "parseResult() called")
+                if(resultCode != Activity.RESULT_OK || intent == null)
+                    return null
+                return intent.data
+            }
+        }
+
+        pickContactCallback = ActivityResultCallback<Uri?> { contactUri: Uri? ->
+            val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+            // Perform your query - the contactUri is like a "where" clause here
+            val cursor = contactUri?.let {
+                requireActivity().contentResolver
+                    .query(it, queryFields, null, null, null)
+            }
+
+            cursor?.use{
+                //Verify cursor contains at least one result
+
+                if (it.count > 0){
+                    // Pull out the first column of the first row of data -
+                    // that is your suspect's name
+
+                    it.moveToFirst()
+
+                    val suspect = it.getString(0)
+                    crime.suspect = suspect
+                    crimeDetailViewModel.saveCrime(crime)
+                    suspectButton.text = suspect
+                }
+            }
+        }
+
+        pickContactLauncher = registerForActivityResult(pickContactContract, pickContactCallback)
     }
 
     override fun onCreateView(
@@ -87,6 +142,10 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         solvedCheckBox.apply {
             isChecked = crime.isSolved
             jumpDrawablesToCurrentState()
+        }
+
+        if (crime.suspect.isNotEmpty()){
+            suspectButton.text = crime.suspect
         }
 
     }
@@ -165,6 +224,26 @@ class CrimeFragment: Fragment(), FragmentResultListener {
                     startActivity(chooserIntent)
                 }
         }
+
+        suspectButton.apply{
+            val pickContactIntent =
+                pickContactContract.createIntent(requireContext(), ContactsContract.Contacts.CONTENT_URI)
+
+            setOnClickListener {
+                pickContactLauncher.launch(ContactsContract.Contacts.CONTENT_URI)
+            }
+/*
+            val packageManager: PackageManager = requireActivity().packageManager
+            val resolvedActivity: ResolveInfo? =
+                packageManager.resolveActivity(pickContactIntent,
+                    PackageManager.MATCH_DEFAULT_ONLY)
+            if(resolvedActivity == null){
+                isEnabled = false
+            }
+*/
+        }
+
+
     }
 
     override fun onStop() {
