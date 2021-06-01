@@ -21,11 +21,13 @@ import android.widget.EditText
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentResultListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import java.util.*
+import java.util.jar.Manifest
 
 private const val TAG = "CrimeFragment"
 private const val ARG_CRIME_ID = "crime_id"
@@ -33,6 +35,7 @@ private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
 private const val DATE_FORMAT = "EEE, MMM, dd"
 private const val REQUEST_CONTACT = 1
+
 
 class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var crime: Crime
@@ -46,6 +49,7 @@ class CrimeFragment: Fragment(), FragmentResultListener {
     private lateinit var pickContactContract: ActivityResultContract<Uri, Uri?>
     private lateinit var pickContactCallback: ActivityResultCallback<Uri?>
     private lateinit var pickContactLauncher: ActivityResultLauncher<Uri>
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy{
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
@@ -59,27 +63,32 @@ class CrimeFragment: Fragment(), FragmentResultListener {
 
         pickContactContract = object : ActivityResultContract<Uri, Uri?>(){
             override fun createIntent(context: Context, input: Uri?): Intent {
-                Log.d(TAG, "createIntent() called")
                 return Intent(Intent.ACTION_PICK, input)
             }
 
             override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
-                Log.d(TAG, "parseResult() called")
                 if(resultCode != Activity.RESULT_OK || intent == null)
                     return null
                 return intent.data
             }
         }
-
         pickContactCallback = ActivityResultCallback<Uri?> { contactUri: Uri? ->
-            val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+            val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME,
+                ContactsContract.Contacts._ID)
             // Perform your query - the contactUri is like a "where" clause here
+            // queryFields: a List to return the DIPLAY_NAME and _ID Column Only
+
+            val queryFieldsPhone = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            // phoneNumberQueryFields: a List to return the PhoneNumber Column Only
+
+
+            var contactId = ""
             val cursor = contactUri?.let {
                 requireActivity().contentResolver
                     .query(it, queryFields, null, null, null)
             }
 
-            cursor?.use{
+            cursor?.use{ //gets suspect's name and id
                 //Verify cursor contains at least one result
 
                 if (it.count > 0){
@@ -88,15 +97,44 @@ class CrimeFragment: Fragment(), FragmentResultListener {
 
                     it.moveToFirst()
 
-                    val suspect = it.getString(0)
+                    val suspect = it.getString(0) //gets suspect name
+                    contactId = it.getString(1) //gets suspects contact id
+
                     crime.suspect = suspect
                     crimeDetailViewModel.saveCrime(crime)
                     suspectButton.text = suspect
                 }
             }
+
+            val phoneWhereClause = "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?"
+            // phoneWhereClause: A filter declaring which rows to return, formatted as an SQL WHERE clause (excluding the WHERE itself)
+            val phoneQueryParameters = arrayOf(contactId)
+            // This val replace the question mark in the phoneWhereClause
+            val phoneURI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+            // This is the Uri to get a Phone number
+
+            val cursorPhone = requireActivity().contentResolver
+                    .query(phoneURI, queryFieldsPhone, phoneWhereClause, phoneQueryParameters, null)
+
+            cursorPhone?.use{
+                if(it.count>0){
+                    it.moveToFirst()
+                    crime.number = cursorPhone.getString(0)
+                    callButton.text = crime.number
+                }
+            }
+
+            crimeDetailViewModel.saveCrime(crime)
         }
 
         pickContactLauncher = registerForActivityResult(pickContactContract, pickContactCallback)
+
+        requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission())
+        { isGranted ->
+            if(isGranted){
+                pickContactLauncher.launch(ContactsContract.Contacts.CONTENT_URI)
+            }
+        }
     }
 
     override fun onCreateView(
@@ -112,6 +150,7 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         timeButton = view.findViewById(R.id.crime_time) as Button
         reportButton = view.findViewById(R.id.crime_report) as Button
         suspectButton = view.findViewById(R.id.crime_suspect) as Button
+        callButton = view.findViewById(R.id.crime_call) as Button
         return view
     }
 
@@ -148,6 +187,9 @@ class CrimeFragment: Fragment(), FragmentResultListener {
             suspectButton.text = crime.suspect
         }
 
+        if (crime.number.isNotEmpty()){
+            callButton.text = crime.number
+        }
     }
 
     private fun getCrimeReport():String{
@@ -227,9 +269,9 @@ class CrimeFragment: Fragment(), FragmentResultListener {
 
         suspectButton.apply{
 
-
             setOnClickListener {
-                pickContactLauncher.launch(ContactsContract.Contacts.CONTENT_URI)
+
+                requestPermissionLauncher.launch(android.Manifest.permission.READ_CONTACTS)
             }
 /*
             val pickContactIntent =
@@ -245,7 +287,15 @@ class CrimeFragment: Fragment(), FragmentResultListener {
 */
         }
 
+        callButton.apply{
+            setOnClickListener {
+                val callIntent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:${crime.number}")
+                }
 
+                startActivity(callIntent)
+            }
+        }
     }
 
     override fun onStop() {
