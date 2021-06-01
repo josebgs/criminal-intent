@@ -28,7 +28,6 @@ import androidx.lifecycle.Observer
 import java.util.*
 
 private const val TAG = "CrimeFragment"
-private const val LOG_TAG = "LOG_CrimeFragment"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
@@ -158,7 +157,7 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         }
         val dateString = DateFormat.format(DATE_FORMAT, crime.date).toString()
 
-        var suspect = if(crime.suspect.isBlank()){
+        val suspect = if(crime.suspect.isBlank()){
             getString(R.string.crime_report_no_suspect)
         } else{
             getString(R.string.crime_report_suspect, crime.suspect)
@@ -226,13 +225,15 @@ class CrimeFragment: Fragment(), FragmentResultListener {
         }
 
         suspectButton.apply{
-            val pickContactIntent =
-                pickContactContract.createIntent(requireContext(), ContactsContract.Contacts.CONTENT_URI)
+
 
             setOnClickListener {
                 pickContactLauncher.launch(ContactsContract.Contacts.CONTENT_URI)
             }
 /*
+            val pickContactIntent =
+                pickContactContract.createIntent(requireContext(), ContactsContract.Contacts.CONTENT_URI)
+
             val packageManager: PackageManager = requireActivity().packageManager
             val resolvedActivity: ResolveInfo? =
                 packageManager.resolveActivity(pickContactIntent,
